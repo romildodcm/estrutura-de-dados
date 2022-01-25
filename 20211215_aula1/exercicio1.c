@@ -6,7 +6,7 @@
 #define tamanhoNome 40
 
 // struct
-struct aluno
+typedef struct
 {
     char nome[tamanhoNome];
     int matricula;
@@ -14,7 +14,7 @@ struct aluno
     float notaMedia;
     int faltas;
     char resultado[10];
-};
+} aluno;
 
 // menu principal
 int menuPrincipal()
@@ -34,8 +34,17 @@ int menuPrincipal()
     return op;
 }
 
+// função para calcular resultado
+const char *resultadoAluno(float notaMedia, int faltas)
+{
+    if (notaMedia >= 6 && faltas <= 20)
+        return "Aprovado  ";
+    else
+        return "Reprovado ";
+}
+
 // inserir aluno
-int inserirAluno(struct aluno *a, int n, int max)
+int inserirAluno(aluno a[], int n, int max)
 {
     int op = 1;
     while (op == 1)
@@ -47,40 +56,74 @@ int inserirAluno(struct aluno *a, int n, int max)
         }
         else if (n < max)
         {
-            printf("Cadastrando(s) %d/%d funcionarios.\n", n + 1, max);
-            printf("Nome: ");
-            fflush(stdin);
-            fgets(a[n].nome, sizeof(a[n].nome), stdin);
-            printf("Grau de estudo (1, 2, 3, 4 ou 5): ");
-            scanf(" %d", &f[n].grauEstudo);
-            printf("Quantidade de linguas que fala (1, 2...): ");
-            scanf(" %d", &f[n].quantidadeLinguas);
-            printf("Nivel do cargo que ocupa (1, 2, 3 ou 4): ");
-            scanf(" %d", &f[n].nivelCargo);
-            printf("Indice de produtividade (entre 0.0 e 1.0): ");
-            scanf(" %f", &f[n].indiceProdutividade);
+            printf("Cadastrando(s) %d/%d alunos.\n", n + 1, max);
 
-            // sobre index para próximo funcionario
+            printf("Nome: ");
+            fgets(a[n].nome, sizeof(a[n].nome), stdin);
+            printf("Matricula: ");
+            scanf(" %d", &a[n].matricula);
+            printf("Nota 1: ");
+            scanf(" %f", &a[n].notasProvas[0]);
+            printf("Nota 2: ");
+            scanf(" %f", &a[n].notasProvas[1]);
+            printf("Faltas: ");
+            scanf(" %d", &a[n].faltas[1]);
+
+            // nota média
+            a[n].notaMedia = (a[n].notasProvas[0] + a[n].notasProvas[1]) / 2;
+
+            // calcula resultado do aluno
+            a[n].resultado = resultadoAluno(a[n].notaMedia, a[n].faltas);
+
+            // sobre index para próximo aluno
             n++;
 
-            printf("\nDigite 1 para inserir mais um funcionario\n");
+            printf("\nDigite 1 para inserir mais um aluno\n");
             printf("ou digite 0 para voltar ao menu principal: ");
             scanf(" %d", &op);
         }
     }
 }
 
+// Listar alunos
+void listarAlunos(aluno a[], int n)
+{
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        printf("\nNome: %s", a[n].nome);
+        printf("Matricula: %d\n", a[n].matricula);
+        printf("Nota 1: %.2f\n", a[n].notasProvas[0]);
+        printf("Nota 2: %.2f\n", a[n].notasProvas[1]);
+        printf("Nota media: %.2f\n", a[n].notaMedia);
+        printf("Faltas: %d\n", a[n].faltas);
+        printf("Resultado: %s\n", a[n].resultado);
+    }
+}
+
+const char *salvarDados(aluno a[], int n)
+{
+    int i;
+    FILE *f;
+    
+    f = fopen("alunos.txt", "a+");
+    if (f == NULL)
+    {
+        return "Erro ao abrir o arquivo.";
+    }
+
+    for (i = 0; i < n; i++)
+    {
+        fprintf(f, "%s\t%d\t%.2f\t%.2f\t%.2f\t%d\t%s\n", a[n].nome, a[n].matricula, a[n].notasProvas[0], a[n].notasProvas[1], a[n].notaMedia, a[n].faltas, a[n].resultado);
+    }
+
+    fclose(f);
+}
+
 // ler arquivo e passar para struct
 
 // Menu inserir
-int inserir(int i)
-{
-    // carrega alunos do arquivo
 
-    // ver até onde tem alunso, permitir cadastrar os restantes
-    // le os dados e carrega
-    return i;
-}
 // salvar arquivos bin
 /*
 fwrite(arquivo, registro, tamanho, quantidade)
@@ -89,26 +132,34 @@ fwrite(arquivo, registro, tamanho, quantidade)
 
 int main()
 {
-    int opcao = 0, alunosCadastrados = 0;
-    struct aluno alunos[maxAlunos];
+    int op = 0, alunosCadastrados = 0;
+    aluno alunos[maxAlunos];
+    FILE *p;
 
-    while (opcao != 5)
+    p = fopen("alunos.txt", "a+");
+
+    while (op != 5)
     {
-        opcao = menuPrincipal();
+        op = menuPrincipal();
 
-        switch (opcao)
+        switch (op)
         {
         case 1:
             // opção de inserir alunos
-            alunosCadastrados = inserir(alunosCadastrados);
+            printf("-------------------- Inserir Aluno ---------------------\n");
+            alunosCadastrados = inserirAluno(alunos, alunosCadastrados, maxAlunos);
             break;
         case 2:
-            /* code */
+            printf("-------------------- Listar Alunos ---------------------\n");
+            listarAlunos(alunos, alunosCadastrados);
             break;
         case 3:
+            printf("-------------------- Salvar Dados ----------------------\n");
+            salvarDados(alunos, alunosCadastrados);
             /* code */
             break;
         case 4:
+            printf("-------------------- Carregar Dados --------------------\n");
             /* code */
             break;
         case 5:
