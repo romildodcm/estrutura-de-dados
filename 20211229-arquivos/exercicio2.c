@@ -13,8 +13,16 @@ typedef struct
     float notasProvas[2];
     float notaMedia;
     int faltas;
-    char resultado[10];
+    char resultado[12];
 } aluno;
+
+// limpar entrada do teclado antes do fgets
+void clear()
+{
+    char ch;
+    while (ch = getchar() != '\n' && ch != EOF)
+        ;
+}
 
 // menu principal
 int menuPrincipal()
@@ -58,8 +66,10 @@ int inserirAluno(aluno a[], int n, int max)
         {
             printf("Cadastrando(s) %d/%d alunos.\n", n + 1, max);
 
+            clear();
             printf("Nome: ");
             fgets(a[n].nome, sizeof(a[n].nome), stdin);
+            a[n].nome[strcspn(a[n].nome, "\n")] = 0;
             printf("Matricula: ");
             scanf(" %d", &a[n].matricula);
             printf("Nota 1: ");
@@ -67,15 +77,15 @@ int inserirAluno(aluno a[], int n, int max)
             printf("Nota 2: ");
             scanf(" %f", &a[n].notasProvas[1]);
             printf("Faltas: ");
-            scanf(" %d", &a[n].faltas[1]);
+            scanf(" %d", &a[n].faltas);
 
             // nota média
-            a[n].notaMedia = (a[n].notasProvas[0] + a[n].notasProvas[1]) / 2;
+            a[n].notaMedia = (a[n].notasProvas[0] + a[n].notasProvas[1]) / 2.0;
 
             // calcula resultado do aluno
-            a[n].resultado = resultadoAluno(a[n].notaMedia, a[n].faltas);
+            strcpy(a[n].resultado, resultadoAluno(a[n].notaMedia, a[n].faltas));
 
-            // sobre index para próximo aluno
+            // sobe index para próximo aluno
             n++;
 
             printf("\nDigite 1 para inserir mais um aluno\n");
@@ -83,60 +93,110 @@ int inserirAluno(aluno a[], int n, int max)
             scanf(" %d", &op);
         }
     }
+
+    return n;
 }
 
-// Listar alunos
 void listarAlunos(aluno a[], int n)
 {
-    int i;
-    for (i = 0; i < n; i++)
+    if (n == 0)
     {
-        printf("\nNome: %s", a[n].nome);
-        printf("Matricula: %d\n", a[n].matricula);
-        printf("Nota 1: %.2f\n", a[n].notasProvas[0]);
-        printf("Nota 2: %.2f\n", a[n].notasProvas[1]);
-        printf("Nota media: %.2f\n", a[n].notaMedia);
-        printf("Faltas: %d\n", a[n].faltas);
-        printf("Resultado: %s\n", a[n].resultado);
+        printf("%d alunos cadastrados.\n", n);
+    }
+    else
+    {
+        int i;
+        for (i = 0; i < n; i++)
+        {
+            printf("Nome: %s\n", a[i].nome);
+            printf("Matricula: %d\n", a[i].matricula);
+            printf("Nota 1: %.2f\n", a[i].notasProvas[0]);
+            printf("Nota 2: %.2f\n", a[i].notasProvas[1]);
+            printf("Nota media: %.2f\n", a[i].notaMedia);
+            printf("Faltas: %d\n", a[i].faltas);
+            printf("Resultado: %s\n", a[i].resultado);
+
+            if (i < n - 1)
+                printf("\n");
+        }
     }
 }
 
 const char *salvarDados(aluno a[], int n)
 {
-    int i;
+    int i = 0;
     FILE *f;
-    
-    f = fopen("alunos.txt", "a+");
+
+    f = fopen("alunos.txt", "w");
     if (f == NULL)
     {
-        return "Erro ao abrir o arquivo.";
+        return "Erro ao abrir o arquivo. ";
     }
 
     for (i = 0; i < n; i++)
     {
-        fprintf(f, "%s\t%d\t%.2f\t%.2f\t%.2f\t%d\t%s\n", a[n].nome, a[n].matricula, a[n].notasProvas[0], a[n].notasProvas[1], a[n].notaMedia, a[n].faltas, a[n].resultado);
+        fprintf(f, "%s\t%d\t%.2f\t%.2f\t%.2f\t%d\t%s\n", a[i].nome, a[i].matricula, a[i].notasProvas[0], a[i].notasProvas[1], a[i].notaMedia, a[i].faltas, a[i].resultado);
     }
 
     fclose(f);
+    return "Dados salvos com sucesso.";
 }
 
 // ler arquivo e passar para struct
+int carregarDados(aluno a[])
+{
+    int i = 0;
+    char readLine[200];
+    char *item;
+    FILE *f;
 
-// Menu inserir
+    f = fopen("alunos.txt", "r");
+    if (f == NULL)
+    {
+        return -1;
+    }
 
-// salvar arquivos bin
-/*
-fwrite(arquivo, registro, tamanho, quantidade)
-*/
-// abrir o arquivo
+    while (fgets(readLine, 200, f))
+    {
+        item = strtok(readLine, "\t");
+        strcpy(a[i].nome, item);
+
+        item = strtok(NULL, "\t");
+        a[i].matricula = atoi(item);
+
+        item = strtok(NULL, "\t");
+        a[i].notasProvas[0] = strtof(item, NULL);
+
+        item = strtok(NULL, "\t");
+        a[i].notasProvas[1] = strtof(item, NULL);
+
+        item = strtok(NULL, "\t");
+        a[i].notaMedia = strtof(item, NULL);
+
+        item = strtok(NULL, "\t");
+        a[i].faltas = atoi(item);
+
+        item = strtok(NULL, "\n");
+        strcpy(a[i].resultado, item);
+
+        i++;
+    }
+
+    fclose(f);
+
+    return i;
+}
 
 int main()
 {
-    int op = 0, alunosCadastrados = 0;
+    int op = 0, alunosCadastrados = 0, err = 0;
     aluno alunos[maxAlunos];
-    FILE *p;
 
-    p = fopen("alunos.txt", "a+");
+    // Carrega dados
+    alunosCadastrados = carregarDados(alunos);
+
+    if (alunosCadastrados == -1)
+        alunosCadastrados = 0;
 
     while (op != 5)
     {
@@ -145,7 +205,6 @@ int main()
         switch (op)
         {
         case 1:
-            // opção de inserir alunos
             printf("-------------------- Inserir Aluno ---------------------\n");
             alunosCadastrados = inserirAluno(alunos, alunosCadastrados, maxAlunos);
             break;
@@ -155,12 +214,20 @@ int main()
             break;
         case 3:
             printf("-------------------- Salvar Dados ----------------------\n");
-            salvarDados(alunos, alunosCadastrados);
-            /* code */
+            printf("%s\n", salvarDados(alunos, alunosCadastrados));
             break;
         case 4:
             printf("-------------------- Carregar Dados --------------------\n");
-            /* code */
+            err = carregarDados(alunos);
+
+            if (err == -1)
+                printf("Erro ao abrir o arquivo.\n");
+            else
+            {
+                alunosCadastrados = err;
+                printf("Dados carregados com sucesso.\n");
+            }
+
             break;
         case 5:
             printf("---------------------- Saindo... -----------------------\n");
