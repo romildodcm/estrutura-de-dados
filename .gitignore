@@ -5,6 +5,7 @@
 .vscode
 .env
 .git
+tarefa-2.c
 # User-specific files
 *.rsuser
 *.suo
